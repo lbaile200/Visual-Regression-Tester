@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visual Regression Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/dashboard.js"></script>
+</head>
+<body>
+  <h1>Monitored Sites</h1>
+{% for job_id, site in sites.items() %}
+  <div class="site-entry">
+    <h3>{{ site.site_name }}</h3>
+    <p>{{ site.url }} (every {{ site.interval_minutes }} min)</p>
+    <button onclick="removeSite('{{ job_id }}')">Remove</button>
+
+    <!-- Filmstrip -->
+    <div class="filmstrip">
+      {% for img in site.images %}
+        <img src="{{ img }}" class="thumbnail" onclick="openLightbox(this.src)">
+      {% endfor %}
+    </div>
+
+    <!-- Active Alert Section -->
+    {% if site.change_detected and site.changes %}
+      {% set latest = site.changes[-1] %}
+      {% if latest.timestamp != site.last_dismissed %}
+        <div class="alert">
+          🔴 Visual Change Detected!
+          <div class="change-pair">
+            <div class="screenshot">
+              <p>Before ({{ latest.timestamp }})</p>
+              <img src="{{ latest.prev }}" class="compare-img">
+            </div>
+            <div class="screenshot">
+              <p>After ({{ latest.timestamp }})</p>
+              <img src="{{ latest.curr }}" class="compare-img">
+            </div>
+          </div>
+          <button onclick="dismissAlert('{{ site.site_name }}')">Dismiss Alert</button>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- Full Change History -->
+{% if site.changes %}
+  <h4>
+    Change History
+    <button onclick="toggleHistory('{{ site.site_name }}')">Show History</button>
+  </h4>
+  <div id="history-{{ site.site_name }}" style="display: none;">
+    <ul>
+      {% for change in site.changes %}
+        <li>
+          <strong>{{ change.timestamp }}</strong><br>
+          <img src="{{ change.prev }}" class="compare-img" onclick="openLightbox(this.src)">
+          <img src="{{ change.curr }}" class="compare-img" onclick="openLightbox(this.src)">
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+  </div>
+{% endfor %}
+
+
+  <h2>Add Site</h2>
+  <input id="url" placeholder="URL">
+  <input id="site_name" placeholder="Site Name">
+  <input id="interval" type="number" placeholder="Interval (min)">
+  <button onclick="addSite()">Add</button>
+
+
+  <div id="lightbox" class="lightbox hidden">
+  <span class="close" onclick="closeLightbox()">&times;</span>
+  <img id="lightbox-img" src="" alt="Full screenshot">
+</div>
+</body>
+</html>

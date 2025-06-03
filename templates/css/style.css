@@ -1,0 +1,88 @@
+.filmstrip {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    overflow-x: auto;
+}
+
+.thumbnail {
+    max-width: 100px;
+    max-height: 75px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+.thumbnail:hover {
+    transform: scale(1.1);
+}
+
+.lightbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+}
+
+.lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 8px;
+    box-shadow: 0 0 20px black;
+}
+
+.lightbox .close {
+    position: absolute;
+    top: 20px; right: 30px;
+    font-size: 36px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 10000;
+}
+
+.hidden {
+    display: none;
+}
+
+.alert {
+    background-color: #ffe0e0;
+    color: #a00;
+    padding: 6px 12px;
+    border: 1px solid #a00;
+    border-radius: 4px;
+    margin-top: 6px;
+    font-weight: bold;
+}
+.compare-img {
+    max-width: 300px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.change-pair {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.screenshot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+button {
+    padding: 4px 8px;
+    font-size: 0.9em;
+    margin-top: 6px;
+    cursor: pointer;
+}
+.compare-img {
+    cursor: pointer;
+}
