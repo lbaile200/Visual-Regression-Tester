@@ -2,6 +2,42 @@
   "site_homelab": {
     "url": "https://www.lucasbailey.net",
     "site_name": "homelab",
-    "interval_minutes": 1
+    "interval_minutes": 1,
+    "last_dismissed": "20250603_190425"
+  },
+  "site_Marketplace": {
+    "url": "HTTPS://www.marketplace-simulation.com",
+    "site_name": "Marketplace",
+    "interval_minutes": 5
+  },
+  "site_MPL_salesform": {
+    "url": "https://www.marketplace-simulation.com/contact-us/",
+    "site_name": "MPL_salesform",
+    "interval_minutes": 10
+  },
+  "site_MPL_supportform": {
+    "url": "https://www.marketplace-simulation.com/contact-support/",
+    "site_name": "MPL_supportform",
+    "interval_minutes": 10
+  },
+  "site_MPL_category": {
+    "url": "https://www.marketplace-simulation.com/core-business-simulations/",
+    "site_name": "MPL_category",
+    "interval_minutes": 10
+  },
+  "site_MPL_product_new": {
+    "url": "https://www.marketplace-simulation.com/compare-our-business-simulations/business-fundamentals-bikes/",
+    "site_name": "MPL_product_new",
+    "interval_minutes": 10
+  },
+  "site_MPL_product_old": {
+    "url": "https://www.marketplace-simulation.com/compare-our-business-simulations/strategy-and-business-policy-bikes/",
+    "site_name": "MPL_product_old",
+    "interval_minutes": 10
+  },
+  "site_MPL_compare": {
+    "url": "https://www.marketplace-simulation.com/compare-tool/",
+    "site_name": "MPL_compare",
+    "interval_minutes": 10
   }
 }

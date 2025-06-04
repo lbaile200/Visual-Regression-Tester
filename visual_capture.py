@@ -1,30 +1,13 @@
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-from datetime import datetime
-import os
-import shutil
-
-#def capture_job(url, site_name):
-#    options = Options()
-#    options.add_argument('--headless')
-#    driver = webdriver.Firefox(options=options)
-#    driver.set_window_size(1366, 768)
-#    driver.get(url)
-#    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-#    folder = f'screenshots/{site_name}'
-#    os.makedirs(folder, exist_ok=True)
-#    driver.save_screenshot(f'{folder}/{ts}.png')
-#    driver.quit()
-
-from PIL import Image, ImageChops
 from datetime import datetime, timedelta
-import os, json
+from PIL import Image
+import os, json, shutil
+import cv2
+import numpy as np
 
 def capture_job(url, site_name):
     # Step 1: Take screenshot
-    from selenium import webdriver
-    from selenium.webdriver.firefox.options import Options
-
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Firefox(options=options)
@@ -38,24 +21,20 @@ def capture_job(url, site_name):
     driver.save_screenshot(screenshot_path)
     driver.quit()
 
-   # Step 2: Diff with previous screenshot
-    prev_img_path = None
+    # Always define existing_images
     existing_images = sorted([f for f in os.listdir(folder) if f.endswith('.png')])
+
+    # Step 2: Diff with previous screenshot
+    prev_img_path = None
     if len(existing_images) >= 2:
         prev_img_path = os.path.join(folder, existing_images[-2])
 
-    is_significant = False
-    if prev_img_path and os.path.exists(prev_img_path):
-        prev_img = Image.open(prev_img_path)
-        curr_img = Image.open(screenshot_path)
-
-    import cv2
-    import numpy as np
+    # First screenshot, nothing to compare
+    if not prev_img_path:
+        return False, None, screenshot_path
 
     def mse(imageA, imageB):
-        # Mean Squared Error
-        err = np.mean((imageA.astype("float") - imageB.astype("float")) ** 2)
-        return err
+        return np.mean((imageA.astype("float") - imageB.astype("float")) ** 2)
 
     def load_cv_image(path):
         return cv2.imread(path)
@@ -63,24 +42,22 @@ def capture_job(url, site_name):
     img1 = load_cv_image(prev_img_path)
     img2 = load_cv_image(screenshot_path)
 
+    is_significant = False
+
     if img1 is None or img2 is None:
         print("[ERROR] One of the images could not be loaded for comparison.")
     else:
-        # Resize if necessary (not required if both screenshots are same size)
         if img1.shape != img2.shape:
             img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
 
         error = mse(img1, img2)
         print(f"[DEBUG] MSE diff for {site_name} = {error}")
 
-        # Lower = more similar. You can tune this.
-        if error > 50:  # threshold can be lowered for sensitivity
+        if error > 50:
             is_significant = True
             print(f"[VISUAL CHANGE] Change detected for {site_name} at {ts}")
-        else:
-            print(f"[NO CHANGE] Images are similar (MSE={error})")
+
         if is_significant:
-            # Save both current and previous as permanent "change snapshots"
             changes_dir = f"{folder}/changes"
             os.makedirs(changes_dir, exist_ok=True)
 
@@ -90,12 +67,14 @@ def capture_job(url, site_name):
             shutil.copyfile(prev_img_path, prev_copy)
             shutil.copyfile(screenshot_path, curr_copy)
 
-            # Optionally log this in a separate JSON file
             change_log = os.path.join(changes_dir, "change_log.json")
             changes = []
             if os.path.exists(change_log):
                 with open(change_log, "r") as f:
-                    changes = json.load(f)
+                    try:
+                        changes = json.load(f)
+                    except json.JSONDecodeError:
+                        print(f"[!] Skipping invalid change_log.json")
 
             changes.append({
                 "timestamp": ts,
@@ -106,13 +85,15 @@ def capture_job(url, site_name):
             with open(change_log, "w") as f:
                 json.dump(changes, f, indent=2)
 
-
     # Step 3: Save metadata
     meta_path = os.path.join(folder, 'metadata.json')
     metadata = []
     if os.path.exists(meta_path):
         with open(meta_path, 'r') as f:
-            metadata = json.load(f)
+            try:
+                metadata = json.load(f)
+            except json.JSONDecodeError:
+                print(f"[!] Skipping invalid metadata file: {f.name}")
 
     metadata.append({
         "timestamp": ts,
@@ -127,6 +108,9 @@ def capture_job(url, site_name):
     # Step 4: Cleanup old
     cleanup_old_screenshots(site_name)
 
+    # Step 5: Return comparison result
+    return is_significant, prev_img_path, screenshot_path
+
 def cleanup_old_screenshots(site_name, keep_minutes=1440):
     folder = f'screenshots/{site_name}'
     meta_path = f'{folder}/metadata.json'
@@ -135,7 +119,11 @@ def cleanup_old_screenshots(site_name, keep_minutes=1440):
         return
 
     with open(meta_path, 'r') as f:
-        metadata = json.load(f)
+        try:
+            metadata = json.load(f)
+        except json.JSONDecodeError:
+            print(f"[!] Skipping invalid metadata file: {f.name}")
+            return
 
     now = datetime.now()
     updated = []

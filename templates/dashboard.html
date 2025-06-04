@@ -16,32 +16,29 @@
     <!-- Filmstrip -->
     <div class="filmstrip">
       {% for img in site.images %}
-        <img src="{{ img }}" class="thumbnail" onclick="openLightbox(this.src)">
+        <img src="{{ img }}" class="thumbnail" onclick="showLightbox('{{ img }}')">
       {% endfor %}
     </div>
 
     <!-- Active Alert Section -->
-    {% if site.change_detected and site.changes %}
-      {% set latest = site.changes[-1] %}
-      {% if latest.timestamp != site.last_dismissed %}
-        <div class="alert">
-          🔴 Visual Change Detected!
-          <div class="change-pair">
-            <div class="screenshot">
-              <p>Before ({{ latest.timestamp }})</p>
-              <img src="{{ latest.prev }}" class="compare-img">
-            </div>
-            <div class="screenshot">
-              <p>After ({{ latest.timestamp }})</p>
-              <img src="{{ latest.curr }}" class="compare-img">
-            </div>
-          </div>
-          <button onclick="dismissAlert('{{ site.site_name }}')">Dismiss Alert</button>
-        </div>
-      {% endif %}
-    {% endif %}
+{% if site.change_detected and site.changes %}
+  {% set latest = site.changes[0] %}
+  <div class="alert">
+    🔴 Visual Change Detected!
+    <div class="change-pair">
+      <div class="screenshot">
+        <p>Before ({{ latest.timestamp }})</p>
+        <img src="{{ latest.prev }}" class="compare-img" onclick="showLightbox('{{ latest.prev }}')">
+      </div>
+      <div class="screenshot">
+        <p>After ({{ latest.timestamp }})</p>
+        <img src="{{ latest.curr }}" class="compare-img" onclick="showLightbox('{{ latest.curr }}')">
+      </div>
+    </div>
+    <button onclick="dismissAlert('{{ site.site_name }}')">Dismiss Alert</button>
+  </div>
+{% endif %}
 
-    <!-- Full Change History -->
 {% if site.changes %}
   <h4>
     Change History
@@ -52,8 +49,8 @@
       {% for change in site.changes %}
         <li>
           <strong>{{ change.timestamp }}</strong><br>
-          <img src="{{ change.prev }}" class="compare-img" onclick="openLightbox(this.src)">
-          <img src="{{ change.curr }}" class="compare-img" onclick="openLightbox(this.src)">
+          <img src="{{ change.prev }}" class="compare-img" onclick="showLightbox('{{ change.prev }}')">
+          <img src="{{ change.curr }}" class="compare-img" onclick="showLightbox('{{ change.curr }}')">
         </li>
       {% endfor %}
     </ul>
@@ -71,9 +68,9 @@
   <button onclick="addSite()">Add</button>
 
 
-  <div id="lightbox" class="lightbox hidden">
-  <span class="close" onclick="closeLightbox()">&times;</span>
-  <img id="lightbox-img" src="" alt="Full screenshot">
-</div>
+<!-- Lightbox container -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+  <img id="lightbox-img" src="">
+</div></div>
 </body>
 </html>

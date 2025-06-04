@@ -1,12 +1,17 @@
-function openLightbox(src) {
-    const lightbox = document.getElementById("lightbox");
-    const img = document.getElementById("lightbox-img");
-    img.src = src;
-    lightbox.classList.remove("hidden");
+function showLightbox(src) {
+  const lightbox = document.getElementById("lightbox");
+  const img = document.getElementById("lightbox-img");
+  img.src = src;
+  lightbox.classList.add("show");
 }
 
-function closeLightbox() {
-    document.getElementById("lightbox").classList.add("hidden");
+function closeLightbox(event) {
+  // only close if you click outside the image
+  if (event.target.id === "lightbox") {
+    const lightbox = document.getElementById("lightbox");
+    lightbox.classList.remove("show");
+    document.getElementById("lightbox-img").src = "";
+  }
 }
 
 function addSite() {
@@ -32,10 +37,11 @@ function removeSite(job_id) {
 }
 
 function dismissAlert(siteName) {
-    fetch(`/dismiss-alert/${siteName}`, {
-        method: "POST"
-    }).then(() => location.reload());
+  fetch(`/dismiss-alert/${siteName}`, {
+    method: "POST"
+  }).then(() => location.reload());
 }
+
 function toggleHistory(siteName) {
     const section = document.getElementById(`history-${siteName}`);
     if (section.style.display === "none") {

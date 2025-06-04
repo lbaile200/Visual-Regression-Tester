@@ -1,0 +1,50 @@
+[
+  {
+    "timestamp": "20250604_094619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_094619.png",
+    "is_significant_change": true
+  },
+  {
+    "timestamp": "20250604_095619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_095619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_100619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_100619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_101619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_101619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_102619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_102619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_103619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_103619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_104619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_104619.png",
+    "is_significant_change": false
+  },
+  {
+    "timestamp": "20250604_105619",
+    "site": "MPL_salesform",
+    "path": "screenshots/MPL_salesform/20250604_105619.png",
+    "is_significant_change": false
+  }
+]

@@ -1,34 +1,24 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from scheduler import schedule_job, remove_job, scheduler
 from visual_capture import capture_job
-import json, os
-import glob
-
-def get_recent_screenshots(site_name, count=6):
-    folder = f'screenshots/{site_name}'
-    meta_path = f'{folder}/metadata.json'
-    images = []
-    change_flag = False
-
-    if os.path.exists(meta_path):
-        with open(meta_path, 'r') as f:
-            metadata = json.load(f)
-        recent = sorted(metadata, key=lambda x: x['timestamp'], reverse=True)[:count]
-        images = [entry['path'].replace('screenshots/', '/static/screenshots/') for entry in recent]
-        if recent and recent[0].get("is_significant_change", False):
-            change_flag = True
-
-    return images, change_flag
+import json, os, glob
 
 app = Flask(__name__)
 scheduler.start()
 
 DATA_FILE = "sites.json"
+CHANGE_DIR = "changes"
 
+# --------------------
+# Utility Functions
+# --------------------
 def load_sites():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                print("[ERROR] Invalid sites.json")
     return {}
 
 def save_sites(sites):
@@ -37,42 +27,72 @@ def save_sites(sites):
 
 monitored_sites = load_sites()
 
-# Rehydrate on startup
-for job_id, site in monitored_sites.items():
-    schedule_job(job_id, lambda url=site['url'], name=site['site_name']: capture_job(url, name), site['interval_minutes'])
+# --------------------
+# Screenshot Loading
+# --------------------
+def get_recent_screenshots(site_name, count=6):
+    folder = f'screenshots/{site_name}'
+    if not os.path.exists(folder):
+        return [], False
+
+    images = sorted(glob.glob(f"{folder}/*.png"), reverse=True)
+    images = [img.replace("screenshots/", "/static/screenshots/") for img in images[:count]]
+
+    change_flag = False
+    meta_path = os.path.join(folder, 'metadata.json')
+    if os.path.exists(meta_path):
+        with open(meta_path, 'r') as f:
+            try:
+                metadata = json.load(f)
+                recent = sorted(metadata, key=lambda x: x['timestamp'], reverse=True)[:count]
+                if recent and recent[0].get("is_significant_change", False):
+                    change_flag = True
+            except json.JSONDecodeError:
+                print(f"[!] Skipping invalid metadata file: {meta_path}")
+    return images, change_flag
 
 def load_changes(site_name):
-    path = f"screenshots/{site_name}/changes/change_log.json"
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return []
+    path = f"screenshots/{site_name}/changes"
+    if not os.path.exists(path):
+        return []
+    changes = []
+    for json_file in sorted(os.listdir(path), reverse=True):
+        if json_file.endswith(".json"):
+            try:
+                with open(os.path.join(path, json_file), "r") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        changes.extend(data)
+                    elif isinstance(data, dict):
+                        changes.append(data)
+            except Exception as e:
+                print(f"[!] Failed to load change file {json_file}: {e}")
+    return changes
 
-def load_dismissed_timestamp(site_name):
-    path = f"screenshots/{site_name}/dismissed.json"
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f).get("last_dismissed")
-    return None
-
+# --------------------
+# Flask Routes
+# --------------------
 @app.route("/")
 def dashboard():
     sites_with_images = {}
     for job_id, site in monitored_sites.items():
-        images, change_flag = get_recent_screenshots(site["site_name"])
-        changes = load_changes(site["site_name"])
-        last_dismissed = load_dismissed_timestamp(site["site_name"])
+        site_name = site["site_name"]
+        images, _ = get_recent_screenshots(site_name)
+        changes = load_changes(site_name)
+        last_dismissed = site.get("last_dismissed")
+        latest_ts = changes[-1]["timestamp"] if changes else None
+        change_detected = latest_ts and latest_ts != last_dismissed
+
         sites_with_images[job_id] = {
             **site,
             "images": images,
-            "change_detected": change_flag,
             "changes": changes,
-            "last_dismissed": last_dismissed
+            "last_dismissed": last_dismissed,
+            "change_detected": change_detected
         }
+
     return render_template("dashboard.html", sites=sites_with_images)
 
-
-from flask import send_from_directory
 @app.route('/static/screenshots/<path:filename>')
 def serve_screenshot(filename):
     return send_from_directory('screenshots', filename)
@@ -89,9 +109,33 @@ def custom_js(filename):
 def add_site():
     data = request.json
     job_id = f"site_{data['site_name']}"
+    url = data['url']
+    site_name = data['site_name']
+    interval = data['interval_minutes']
 
-    schedule_job(job_id, lambda: capture_job(data['url'], data['site_name']), data['interval_minutes'])
-    monitored_sites[job_id] = data
+    def job():
+        changed, before, after = capture_job(url, site_name)
+        if changed:
+            print(f"[VISUAL CHANGE] Change detected for {site_name} at {after}")
+            ts = os.path.basename(after).replace(".png", "")
+            change_dir = f"screenshots/{site_name}/changes"
+            os.makedirs(change_dir, exist_ok=True)
+            metadata = {
+                "timestamp": ts,
+                "prev": before.replace("screenshots/", "/static/screenshots/"),
+                "curr": after.replace("screenshots/", "/static/screenshots/")
+            }
+            with open(f"{change_dir}/{ts}.json", "w") as f:
+                json.dump(metadata, f, indent=2)
+
+    schedule_job(job_id, job, interval)
+
+    monitored_sites[job_id] = {
+        "url": url,
+        "site_name": site_name,
+        "interval_minutes": interval
+    }
+
     save_sites(monitored_sites)
     return jsonify({"status": "scheduled"})
 
@@ -103,24 +147,33 @@ def remove_site(job_id):
         save_sites(monitored_sites)
     return jsonify({"status": "removed"})
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 @app.route("/dismiss-alert/<site_name>", methods=["POST"])
 def dismiss_alert(site_name):
-    folder = f'screenshots/{site_name}'
-    change_log_path = os.path.join(folder, 'changes/change_log.json')
-    dismissed_path = os.path.join(folder, 'dismissed.json')
+    for job_id, site in monitored_sites.items():
+        if site["site_name"] == site_name:
+            change_log_path = f"screenshots/{site_name}/changes/change_log.json"
+            if os.path.exists(change_log_path):
+                with open(change_log_path, "r") as f:
+                    try:
+                        changes = json.load(f)
+                        if isinstance(changes, list) and changes:
+                            latest_ts = changes[-1]["timestamp"]
+                            site["last_dismissed"] = latest_ts
+                            print(f"[INFO] Dismissed alert for {site_name} at {latest_ts}")
+                            save_sites(monitored_sites)
+                            return jsonify({"status": "dismissed"})
+                        else:
+                            print(f"[ERROR] change_log.json for {site_name} is not a valid list")
+                    except json.JSONDecodeError:
+                        print(f"[ERROR] Invalid JSON in change_log.json for {site_name}")
+            break
+    return jsonify({"status": "error"})
 
-    if not os.path.exists(change_log_path):
-        return jsonify({"error": "No changes logged"}), 400
+# --------------------
+# Scheduler Bootstrap
+# --------------------
+for job_id, site in monitored_sites.items():
+    schedule_job(job_id, lambda url=site['url'], name=site['site_name']: capture_job(url, name), site['interval_minutes'])
 
-    with open(change_log_path, 'r') as f:
-        changes = json.load(f)
-
-    if changes:
-        last_ts = changes[-1]["timestamp"]
-        with open(dismissed_path, 'w') as f:
-            json.dump({"last_dismissed": last_ts}, f)
-
-    return jsonify({"status": "dismissed"})
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
