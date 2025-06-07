@@ -2,51 +2,70 @@
 <html>
 <head>
   <title>Visual Regression Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='gptFavicon.png') }}">  <link rel="stylesheet" href="/css/style.css">
   <script src="/js/dashboard.js"></script>
 </head>
 <body>
+<a href="/status">Click here for monitoring-friendly status page</a>
+  <h1>Add Site</h1>
+  <input id="url" placeholder="URL">
+  <input id="site_name" placeholder="Site Name">
+  <input id="interval" type="number" placeholder="Interval (min)">
+  <input id="viewport_width" type="number" placeholder="Viewport Width (e.g. 1366)">
+  <input id="viewport_height" type="number" placeholder="Viewport Height (e.g. 768)">
+  <button onclick="addSite()">Add</button>
+  
   <h1>Monitored Sites</h1>
 {% for job_id, site in sites.items() %}
   <div class="site-entry">
-    <h3>{{ site.site_name }}</h3>
-    <p>{{ site.url }} (every {{ site.interval_minutes }} min)</p>
-    <button onclick="removeSite('{{ job_id }}')">Remove</button>
-
+        <br /><hr style="color:fff;">
+    <div class="baseOptions">
+      <h3>{{ site.site_name }}</h3>
+      <button class="removeButton" onclick="removeSite('{{ job_id }}')">Remove</button>
+    </div>
+      <p class="siteInfo">{{ site.url }} (every {{ site.interval_minutes }} min)</p>
     <!-- Filmstrip -->
     <div class="filmstrip">
       {% for img in site.images %}
+      <div class="thumb-wrapper">
         <img src="{{ img }}" class="thumbnail" onclick="showLightbox('{{ img }}')">
+        <p class="timestamp">{{ img.split('/')[-1].split('.')[0] }}</p>
+      </div>
       {% endfor %}
+
     </div>
 
+
     <!-- Active Alert Section -->
-{% if site.change_detected and site.changes %}
+{% if site.change_detected and site.changes and not site.changes[0].dismissed %}
   {% set latest = site.changes[0] %}
   <div class="alert">
-    🔴 Visual Change Detected!
+    Visual Change Detected!
     <div class="change-pair">
       <div class="screenshot">
-        <p>Before ({{ latest.timestamp }})</p>
+        <p>Before</p>
         <img src="{{ latest.prev }}" class="compare-img" onclick="showLightbox('{{ latest.prev }}')">
       </div>
       <div class="screenshot">
-        <p>After ({{ latest.timestamp }})</p>
+        <p>After</p>
         <img src="{{ latest.curr }}" class="compare-img" onclick="showLightbox('{{ latest.curr }}')">
       </div>
+      <div class="screenshot">
+        <p>Diff!</p>
+        <img src="{{ latest.diff }}" class="compare-img">
+      </div>
     </div>
-    <button onclick="dismissAlert('{{ site.site_name }}')">Dismiss Alert</button>
+    <button onclick="dismissAlert('{{ site.site_name }}', this)">Dismiss Alert</button>
   </div>
 {% endif %}
 
 {% if site.changes %}
-  <h4>
-    Change History
-    <button onclick="toggleHistory('{{ site.site_name }}')">Show History</button>
-  </h4>
-  <div id="history-{{ site.site_name }}" style="display: none;">
+
+    <button class="historyButton" onclick="toggleHistory('{{ site.site_name }}')">Show History</button>
+
+    <div id="history-{{ site.site_name }}" style="display: none;">
     <ul>
-      {% for change in site.changes %}
+      {% for change in site.changes|reverse %}
         <li>
           <strong>{{ change.timestamp }}</strong><br>
           <img src="{{ change.prev }}" class="compare-img" onclick="showLightbox('{{ change.prev }}')">
@@ -56,16 +75,10 @@
     </ul>
   </div>
 {% endif %}
-
   </div>
 {% endfor %}
 
 
-  <h2>Add Site</h2>
-  <input id="url" placeholder="URL">
-  <input id="site_name" placeholder="Site Name">
-  <input id="interval" type="number" placeholder="Interval (min)">
-  <button onclick="addSite()">Add</button>
 
 
 <!-- Lightbox container -->
