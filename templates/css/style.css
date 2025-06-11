@@ -55,15 +55,14 @@ li{
     gap: 8px;
     margin-top: 8px;
     overflow: scroll;
-    width: 50%;
+    width: 100%;
  }
   .thumbnail {
     width: 175px;
     height: auto;
     cursor: pointer;
     transition: transform 0.3s ease;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    
   }
   .thumbnail:hover {
     transform: scale(1.1);
@@ -127,4 +126,85 @@ li{
 
 .compare-img {
     cursor: pointer;
+}
+.site-summary {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s ease;
+}
+
+.site-summary.has-alert {
+  border: 2px solid red;
+  background-color: #ffe5e5;
+  box-shadow: 0 0 10px red;
+}
+.site-summary.has-alert p{
+  color: #000;
+}
+.site-summary.has-alert a{
+  color: #000;
+}
+.site-summary.has-alert h3{
+  color: #000;
+}
+form{
+  color: #fff;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* Two equal-width columns */
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.site-card {
+  background-color: #1f1f1f;
+  border-radius: 8px;
+  padding: 0.75rem;
+  height: auto;
+  width: auto;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.site-card:hover {
+  transform: scale(1.02);
+}
+
+.site-card.alert {
+  border: 2px solid #ff4e4e;
+  box-shadow: 0 0 10px #ff4e4e;
+}
+
+.site-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.site-card .thumbnail {
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  object-position
+}
+#edit-site-form{
+  width: 50%;
+  display: inline-grid;
+}
+#edit-site-form button{
+  margin-top: 1em;
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }

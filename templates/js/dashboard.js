@@ -21,6 +21,8 @@ function addSite() {
     const interval = parseInt(document.getElementById("interval").value);
     const width = parseInt(document.getElementById("viewport_width").value) || 1366;
     const height = parseInt(document.getElementById("viewport_height").value) || 768;
+    const cookieSelector = document.getElementById("cookie_accept_selector").value;
+    const waitTime = parseInt(document.getElementById("wait_time").value) || 2;
 
     fetch("/add-site", {
         method: "POST",
@@ -29,7 +31,9 @@ function addSite() {
             url,
             site_name,
             interval_minutes: interval,
-            viewport: [width, height]
+            viewport: [width, height],
+            cookie_accept_selector: cookieSelector,
+            wait_time: waitTime
         })
     }).then(() => location.reload());
 }
@@ -44,7 +48,12 @@ function dismissAlert(siteName, buttonEl) {
   fetch(`/dismiss-alert/${siteName}`, {
     method: "POST"
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("Non-200 response");
+    return res.json().catch(() => {
+      throw new Error("Invalid JSON response");
+    });
+  })
   .then(data => {
     if (data.status === "dismissed") {
       const alertBox = buttonEl.closest(".alert");
@@ -54,7 +63,7 @@ function dismissAlert(siteName, buttonEl) {
     }
   })
   .catch(err => {
-    console.error("Fetch error:", err);
+    console.error("Dismiss fetch error:", err);
     alert("Network or server error occurred");
   });
 }
@@ -67,4 +76,35 @@ function toggleHistory(siteName) {
     } else {
         section.style.display = "none";
     }
+}
+function submitEdit(siteName) {
+  const url = document.getElementById("edit-url")?.value;
+  const interval = parseInt(document.getElementById("edit-interval")?.value);
+  const viewportInput = document.getElementById("edit-viewport")?.value;
+  const cookieSelector = document.getElementById("edit-cookie-selector")?.value;
+  const waitTime = parseInt(document.getElementById("edit-wait-time")?.value);
+
+  if (!url || !viewportInput || isNaN(interval) || isNaN(waitTime)) {
+    alert("Please fill out all fields correctly.");
+    return;
+  }
+
+  const viewport = viewportInput.split(",").map(Number);
+
+  fetch(`/edit-site/${siteName}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url,
+      interval_minutes: interval,
+      viewport,
+      cookie_accept_selector: cookieSelector,
+      wait_time: waitTime
+    })
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      alert(data.status || "Update complete");
+      location.reload();
+    });
 }

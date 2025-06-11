@@ -5,7 +5,6 @@ import json, os, glob
 from cleanup import cleanup_screenshots
 app = Flask(__name__)
 scheduler.start()
-
 DATA_FILE = "sites.json"
 CHANGE_DIR = "changes"
 
@@ -79,8 +78,8 @@ def load_changes(site_name):
         curr_path = change.get("curr", "").replace("/static/", "")
         if os.path.exists(prev_path) and os.path.exists(curr_path):
             validated.append(change)
-        else:
-            print(f"[!] Skipping broken change: {change.get('timestamp')} (missing image)")
+        #else:
+            #print(f"[!] Skipping broken change: {change.get('timestamp')} (missing image)")
 
     validated.sort(key=lambda c: c.get("timestamp", ""), reverse=True)
     return validated
@@ -118,6 +117,72 @@ def dashboard():
 
     return render_template("dashboard.html", sites=sites_with_images)
 
+@app.route("/site/<site_name>")
+def site_detail(site_name):
+    job_id = f"site_{site_name}"
+    if job_id not in monitored_sites:
+        return "Site not found", 404
+
+    site = monitored_sites[job_id]
+
+    #Provide a default viewport if it's missing
+    if "viewport" not in site or not isinstance(site["viewport"], list) or len(site["viewport"]) != 2:
+        site["viewport"] = [1366, 768]
+
+    images, _ = get_recent_screenshots(site_name)
+    changes = load_changes(site_name)
+    last_dismissed = site.get("last_dismissed")
+    latest_ts = max((c.get("timestamp") for c in changes if "timestamp" in c), default=None)
+    change_detected = latest_ts and latest_ts != last_dismissed
+
+    return render_template("site_detail.html", site={
+        **site,
+        "images": images,
+        "changes": changes,
+        "last_dismissed": last_dismissed,
+        "change_detected": change_detected
+    })
+
+@app.route("/edit-site/<site_name>", methods=["POST"])
+def edit_site(site_name):
+    job_id = f"site_{site_name}"
+    if job_id not in monitored_sites:
+        return jsonify({"error": "Site not found"}), 404
+
+    data = request.json
+    site = monitored_sites[job_id]
+
+    # Make sure "site_name" is always included
+    site["site_name"] = site.get("site_name", site_name)
+
+    # Assign safe values for all editable fields
+    site["url"] = data.get("url", site.get("url", ""))
+    site["interval_minutes"] = data.get("interval_minutes", site.get("interval_minutes", 10))
+    site["viewport"] = data.get("viewport", site.get("viewport", [1366, 768]))
+    site["cookie_accept_selector"] = data.get("cookie_accept_selector", site.get("cookie_accept_selector", None))
+    site["wait_time"] = float(data.get("wait_time", site.get("wait_time", 2)))
+
+    # Save updated site info
+    monitored_sites[job_id] = site
+    save_sites(monitored_sites)
+
+    # Pull safe values for the scheduled job
+    url = site["url"]
+    name = site["site_name"]
+    interval = site["interval_minutes"]
+    viewport = site["viewport"]
+    selector = site.get("cookie_accept_selector")
+    wait_time = site.get("wait_time", 4000)
+
+    remove_job(job_id)
+    schedule_job(
+        job_id,
+        lambda url=url, name=name, viewport=viewport, selector=selector, wait_time=wait_time:
+            capture_job(url, name, viewport, selector, wait_time),
+        interval
+    )
+
+    return jsonify({"status": "Site updated"})
 
 @app.route('/favicon.ico')
 def favicon():
@@ -143,6 +208,8 @@ def add_site():
     site_name = data['site_name']
     interval = data['interval_minutes']
     viewport = data.get('viewport', [1366, 768])  # default fallback
+    cookie_selector = data.get('cookie_accept_selector', None)
+    wait_time = data.get('wait_time', 2)  # default to 2 seconds
 
     def job():
         changed, before, after = capture_job(url, site_name, viewport)
@@ -165,7 +232,9 @@ def add_site():
         "url": url,
         "site_name": site_name,
         "interval_minutes": interval,
-        "viewport": viewport
+        "viewport": viewport,
+        "cookie_accept_selector": cookie_selector,
+        "wait_time": wait_time
     }
 
     save_sites(monitored_sites)
@@ -250,11 +319,19 @@ def status_page():
 from apscheduler.triggers.interval import IntervalTrigger
 
 for job_id, site in monitored_sites.items():
+    url = site['url']
+    name = site['site_name']
+    interval = site['interval_minutes']
+    viewport = site.get('viewport', [1366, 768])
+    cookie_selector = site.get("cookie_accept_selector")
+    wait_time = site.get("wait_time", 2)
+
     schedule_job(
-        job_id,
-        lambda url=site['url'], name=site['site_name']: capture_job(url, name),
-        site['interval_minutes']
-    )
+    job_id,
+    lambda url=url, name=name, viewport=viewport, selector=cookie_selector, wait=wait_time:
+        capture_job(url, name, viewport, selector, wait),
+    interval
+    )  
 
 # Schedule screenshot cleanup every hour
 scheduler.add_job(

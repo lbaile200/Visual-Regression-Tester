@@ -1,3 +1,4 @@
+<!--LUCAS COMMENT OUT
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,6 +14,8 @@
   <input id="interval" type="number" placeholder="Interval (min)">
   <input id="viewport_width" type="number" placeholder="Viewport Width (e.g. 1366)">
   <input id="viewport_height" type="number" placeholder="Viewport Height (e.g. 768)">
+  <input id="cookie_accept_selector" placeholder="Optional: Cookie Accept Button Selector">
+  <input id="wait_time" type="number" placeholder="Wait time (sec, default 2)">
   <button onclick="addSite()">Add</button>
   
   <h1>Monitored Sites</h1>
@@ -24,19 +27,21 @@
       <button class="removeButton" onclick="removeSite('{{ job_id }}')">Remove</button>
     </div>
       <p class="siteInfo">{{ site.url }} (every {{ site.interval_minutes }} min)</p>
-    <!-- Filmstrip -->
+  LUCAS COMMENT OUT-->
+      
+  <!-- Filmstrip LUCAS COMMENT OUT
     <div class="filmstrip">
       {% for img in site.images %}
       <div class="thumb-wrapper">
-        <img src="{{ img }}" class="thumbnail" onclick="showLightbox('{{ img }}')">
+        <img loading="lazy" src="{{ img }}" class="thumbnail" onclick="showLightbox('{{ img }}')">
         <p class="timestamp">{{ img.split('/')[-1].split('.')[0] }}</p>
       </div>
       {% endfor %}
 
-    </div>
+    </div> LUCAS COMMENT OUT-->
 
 
-    <!-- Active Alert Section -->
+    <!-- Active Alert Section LUCAS COMMENT OUT
 {% if site.change_detected and site.changes and not site.changes[0].dismissed %}
   {% set latest = site.changes[0] %}
   <div class="alert">
@@ -44,15 +49,15 @@
     <div class="change-pair">
       <div class="screenshot">
         <p>Before</p>
-        <img src="{{ latest.prev }}" class="compare-img" onclick="showLightbox('{{ latest.prev }}')">
+        <img loading="lazy" src="{{ latest.prev }}" class="compare-img" onclick="showLightbox('{{ latest.prev }}')">
       </div>
       <div class="screenshot">
         <p>After</p>
-        <img src="{{ latest.curr }}" class="compare-img" onclick="showLightbox('{{ latest.curr }}')">
+        <img loading="lazy" src="{{ latest.curr }}" class="compare-img" onclick="showLightbox('{{ latest.curr }}')">
       </div>
       <div class="screenshot">
         <p>Diff!</p>
-        <img src="{{ latest.diff }}" class="compare-img">
+        <img loading="lazy" src="{{ latest.diff }}" class="compare-img" onclick="showLightbox('{{ latest.diff }}')">
       </div>
     </div>
     <button onclick="dismissAlert('{{ site.site_name }}', this)">Dismiss Alert</button>
@@ -68,8 +73,10 @@
       {% for change in site.changes|reverse %}
         <li>
           <strong>{{ change.timestamp }}</strong><br>
-          <img src="{{ change.prev }}" class="compare-img" onclick="showLightbox('{{ change.prev }}')">
-          <img src="{{ change.curr }}" class="compare-img" onclick="showLightbox('{{ change.curr }}')">
+          <img loading="lazy" src="{{ change.prev }}" class="compare-img" onclick="showLightbox('{{ change.prev }}')">
+          <img loading="lazy" src="{{ change.curr }}" class="compare-img" onclick="showLightbox('{{ change.curr }}')">
+          <img loading="lazy" src="{{ change.diff }}" class="compare-img" onclick="showLightbox('{{ change.diff }}')">
+
         </li>
       {% endfor %}
     </ul>
@@ -77,13 +84,48 @@
 {% endif %}
   </div>
 {% endfor %}
+LUCAS COMMENT OUT-->
 
 
 
-
-<!-- Lightbox container -->
+<!-- Lightbox container LUCAS COMMENT OUT
 <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
-  <img id="lightbox-img" src="">
+  <img loading="lazy" id="lightbox-img" src="">
 </div></div>
+</body>
+</html>
+LUCAS COMMENT OUT -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visual Regression Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='gptFavicon.png') }}">  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/dashboard.js"></script>
+</head>
+<h1>Add Site</h1>
+<body>
+
+<a href="/status">Click here for monitoring-friendly status page</a><br><br>
+<input id="url" placeholder="URL">
+<input id="site_name" placeholder="Site Name">
+<input id="interval" type="number" placeholder="Interval (min)">
+<input id="cookie_accept_selector" placeholder="Optional Cookie Selector">
+<input id="wait_time" type="number" placeholder="Wait time (sec, default 2)">
+
+<button onclick="addSite()">Add</button>
+<h1>Monitored Sites</h1>
+<div class="dashboard-grid">
+  {% for job_id, site in sites.items() %}
+    <div class="site-card{% if site.change_detected %} alert{% endif %}">
+      <a href="/site/{{ site.site_name }}">
+        <h3>{{ site.site_name }}</h3>
+        <img loading="lazy" src="{{ site.images[0] if site.images else '/static/placeholder.png' }}" alt="{{ site.site_name }}" class="thumbnail">
+      </a>
+    </div>
+  {% endfor %}
+</div>
+<hr>
+
 </body>
 </html>

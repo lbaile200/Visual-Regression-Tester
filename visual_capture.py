@@ -6,12 +6,25 @@ import os, json, shutil
 import cv2
 import numpy as np
 
-def capture_job(url, site_name, viewport=(1366, 768)):
+def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait_time=2):
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Firefox(options=options)
     driver.set_window_size(viewport[0], viewport[1])
+    import time
     driver.get(url)
+    time.sleep(wait_time)
+    if cookie_selector:
+        try:
+            # Wait for element and click it
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+
+            WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.CSS_SELECTOR, cookie_selector))).click()
+            print(f"[✓] Accepted cookies for {site_name}")
+        except Exception as e:
+            print(f"[!] Cookie accept not found or failed for {site_name}: {e}")
 
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
     folder = f'screenshots/{site_name}'
