@@ -203,6 +203,56 @@ form{
   margin-top: 1em;
 }
 
+details.accordion {
+  margin-top: 1em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5em;
+  color: #fff;
+  width: fit-content;
+}
+
+/* Remove the native disclosure triangle */
+details.accordion summary::-webkit-details-marker {
+  display: none;
+}
+details.accordion summary::marker {
+  display: none;
+}
+
+summary.accordion-summary {
+  font-size: 1.25em;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* Optional styling for the gear icon */
+.gear-icon {
+  font-size: 1.25em;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+/* Rotate gear when accordion is open */
+details[open] .gear-icon {
+  transform: rotate(90deg);
+}
+
+summary.accordion-summary {
+  font-size: 1.25em;
+  font-weight: bold;
+  cursor: pointer;
+}
+.panel {
+  padding: 0 18px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;

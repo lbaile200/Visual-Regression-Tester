@@ -5,12 +5,14 @@ import json, os, glob
 from cleanup import cleanup_screenshots
 app = Flask(__name__)
 scheduler.start()
+#DATA_FILE is where all the sites are stored.  Ideally this could be a database if you wanted to scale.  For my homelab, no point.
 DATA_FILE = "sites.json"
 CHANGE_DIR = "changes"
 
 # --------------------
-# Utility Functions
+# Utility Functions 
 # --------------------
+#if DATA_FILE exists, return full JSON array
 def load_sites():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
@@ -19,7 +21,7 @@ def load_sites():
             except json.JSONDecodeError:
                 print("[ERROR] Invalid sites.json")
     return {}
-
+#dump returned data on 'sites' to sites.json
 def save_sites(sites):
     with open(DATA_FILE, "w") as f:
         json.dump(sites, f, indent=2)
@@ -71,7 +73,7 @@ def load_changes(site_name):
             except Exception as e:
                 print(f"[!] Failed to load change file {json_file}: {e}")
 
-    # ✅ Remove any that reference missing images
+    #Remove any that reference missing images
     validated = []
     for change in changes:
         prev_path = change.get("prev", "").replace("/static/", "")
@@ -294,7 +296,7 @@ def dismiss_alert(site_name):
         return jsonify({"error": "Failed to dismiss"}), 500
 
 
-
+#prtg (or other monitoring) status page, displays site names and alert status
 @app.route("/status")
 def status_page():
     names = []
@@ -317,7 +319,7 @@ def status_page():
 # Scheduler Bootstrap
 # --------------------
 from apscheduler.triggers.interval import IntervalTrigger
-
+#define our variables for various sites we've added.
 for job_id, site in monitored_sites.items():
     url = site['url']
     name = site['site_name']
@@ -325,7 +327,7 @@ for job_id, site in monitored_sites.items():
     viewport = site.get('viewport', [1366, 768])
     cookie_selector = site.get("cookie_accept_selector")
     wait_time = site.get("wait_time", 2)
-
+    #lambda to run capture_job (from visual_capture.py) with appropriate info.
     schedule_job(
     job_id,
     lambda url=url, name=name, viewport=viewport, selector=cookie_selector, wait=wait_time:
@@ -341,6 +343,6 @@ scheduler.add_job(
     name='Clean up old screenshots',
     replace_existing=True
 )
-
+#define how flask runs and on what port.  0.0.0.0 is listening everywhere, can also specify specific IP to listen on.
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5006)

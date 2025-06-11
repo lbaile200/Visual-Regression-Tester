@@ -9,28 +9,32 @@
 <body>
 
 <a href="/">← Back to Dashboard</a>
-<h2>Edit Site Settings</h2>
-<div id="editForm">
-<form id="edit-site-form" onsubmit="submitEdit('{{ site.site_name }}'); return false;">
-  <label for="edit-url">URL:</label>
-  <input type="text" id="edit-url" value="{{ site.url }}"><br>
+<details class="accordion">
+  <summary class="accordion-summary">
+    <span class="gear-icon">⚙️</span>
+    Edit Site Settings
+  </summary>
+  <div id="editForm">
+    <form id="edit-site-form" onsubmit="submitEdit('{{ site.site_name }}'); return false;">
+      <label for="edit-url">URL:</label>
+      <input type="text" id="edit-url" value="{{ site.url }}"><br>
 
-  <label for="edit-interval">Interval (minutes):</label>
-  <input type="number" id="edit-interval" value="{{ site.interval_minutes }}"><br>
+      <label for="edit-interval">Interval (minutes):</label>
+      <input type="number" id="edit-interval" value="{{ site.interval_minutes }}"><br>
 
-  <label for="edit-viewport">Viewport (w,h):</label>
-  <input type="text" id="edit-viewport" value="{{ site.viewport[0] if site.viewport else 1366 }},{{ site.viewport[1] if site.viewport else 768 }}"><br>
+      <label for="edit-viewport">Viewport (w,h):</label>
+      <input type="text" id="edit-viewport" value="{{ site.viewport[0] if site.viewport else 1366 }},{{ site.viewport[1] if site.viewport else 768 }}"><br>
 
-  <label for="edit-cookie-selector">Cookie Accept Selector:</label>
-  <input type="text" id="edit-cookie-selector" value="{{ site.cookie_accept_selector or '' }}"><br>
+      <label for="edit-cookie-selector">Cookie Accept Selector:</label>
+      <input type="text" id="edit-cookie-selector" value="{{ site.cookie_accept_selector or '' }}"><br>
 
-  <label for="edit-wait-time">Wait Time (seconds):</label>
-  <input type="number" id="edit-wait-time" value="{{ site.wait_time or 4 }}"><br>
+      <label for="edit-wait-time">Wait Time (seconds):</label>
+      <input type="number" id="edit-wait-time" value="{{ site.wait_time or 4 }}"><br>
 
-  <button type="submit">Update Site</button>
-</form>
-</div>
-
+      <button type="submit">Update Site</button>
+    </form>
+  </div>
+</details>
 <h1>{{ site.site_name }}</h1>
 <p>{{ site.url }} — Every {{ site.interval_minutes }} min</p>
 
@@ -49,7 +53,7 @@
 {% if site.change_detected and site.changes %}
   {% set latest = site.changes[0] %}
   <div class="alert">
-    🔴 Visual Change Detected!
+    Visual Change Detected!
     <div class="change-pair">
       <div class="screenshot">
         <p>Before</p>

@@ -62,10 +62,6 @@ function dismissAlert(siteName, buttonEl) {
       alert("Dismiss failed: " + (data.error || "unknown"));
     }
   })
-  .catch(err => {
-    console.error("Dismiss fetch error:", err);
-    alert("Network or server error occurred");
-  });
 }
 
 
@@ -108,3 +104,4 @@ function submitEdit(siteName) {
       location.reload();
     });
 }
+

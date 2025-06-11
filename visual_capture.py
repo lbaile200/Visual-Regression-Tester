@@ -155,7 +155,7 @@ def cleanup_old_screenshots(site_name, keep_minutes=1440):
     for item in metadata:
         path = item.get('path', '')
 
-        # ✅ Protect anything inside the /changes/ directory
+        # Protect anything inside the /changes/ directory
         if "/changes/" in path:
             updated.append(item)
             continue

@@ -17,6 +17,6 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install flask apscheduler selenium pillow opencv-python-headless numpy
 
-echo "✅ Setup complete."
-echo "➡️  Activate the environment with: source venv/bin/activate"
-echo "➡️  Run the app with: python app.py"
+echo "✓ Setup complete."
+echo "Activate the environment with: source venv/bin/activate"
+echo "Run the app with: python app.py"
