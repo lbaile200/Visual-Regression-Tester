@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime, timedelta
 
+### when to remove based on your needs.  This config requires about 400MB (persistent) per-site.
 SCREENSHOT_BASE = "screenshots"
 KEEP_SCREENSHOTS_FOR_HOURS = 4
 KEEP_CHANGES_FOR_DAYS = 7

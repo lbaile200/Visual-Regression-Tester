@@ -4,7 +4,7 @@ from visual_capture import capture_job
 import json, os, glob
 from cleanup import cleanup_screenshots
 app = Flask(__name__)
-scheduler.start()
+#scheduler.start()
 #DATA_FILE is where all the sites are stored.  Ideally this could be a database if you wanted to scale.  For my homelab, no point.
 DATA_FILE = "sites.json"
 CHANGE_DIR = "changes"
@@ -89,6 +89,7 @@ def load_changes(site_name):
 # --------------------
 # Flask Routes
 # --------------------
+### The dashboard
 @app.route("/")
 def dashboard():
     sites_with_images = {}
@@ -119,6 +120,7 @@ def dashboard():
 
     return render_template("dashboard.html", sites=sites_with_images)
 
+###The individual site, filmstrip, etc
 @app.route("/site/<site_name>")
 def site_detail(site_name):
     job_id = f"site_{site_name}"
@@ -145,6 +147,7 @@ def site_detail(site_name):
         "change_detected": change_detected
     })
 
+### passback for editing
 @app.route("/edit-site/<site_name>", methods=["POST"])
 def edit_site(site_name):
     job_id = f"site_{site_name}"
@@ -186,14 +189,17 @@ def edit_site(site_name):
 
     return jsonify({"status": "Site updated"})
 
+### Literally all this for a favicon.  Flask is not perfect.
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory('static', 'gptFavicon.png', mimetype='image/png')
 
+### let us view screenshots in browser (and lightbox, and filmstrip)
 @app.route('/static/screenshots/<path:filename>')
 def serve_screenshot(filename):
     return send_from_directory('screenshots', filename)
 
+### Literally all this for CSS and JS.  Again, flask is not perfect.
 @app.route('/css/<path:filename>')
 def custom_css(filename):
     return send_from_directory('templates/css', filename)
@@ -202,6 +208,7 @@ def custom_css(filename):
 def custom_js(filename):
     return send_from_directory('templates/js', filename)
 
+###how we add a site, basically this just writes to a .json file that other jobs read from to do their thing.  For better scale and multiuser we should make this a database one day.  
 @app.route("/add-site", methods=["POST"])
 def add_site():
     data = request.json
@@ -242,6 +249,7 @@ def add_site():
     save_sites(monitored_sites)
     return jsonify({"status": "scheduled"})
 
+### passback for removal
 @app.route("/remove-site/<job_id>", methods=["DELETE"])
 def remove_site(job_id):
     remove_job(job_id)
@@ -250,6 +258,7 @@ def remove_site(job_id):
         save_sites(monitored_sites)
     return jsonify({"status": "removed"})
 
+### passback for calls to dismiss alerts.  This could use some work I think...
 @app.route("/dismiss-alert/<site_name>", methods=["POST"])
 def dismiss_alert(site_name):
     print(f"[✓] Dismiss request received for: {site_name}")
@@ -296,7 +305,7 @@ def dismiss_alert(site_name):
         return jsonify({"error": "Failed to dismiss"}), 500
 
 
-#prtg (or other monitoring) status page, displays site names and alert status
+#prtg, uptime kuma (or other monitoring) status page, displays site names and alert status
 @app.route("/status")
 def status_page():
     names = []
@@ -335,7 +344,7 @@ for job_id, site in monitored_sites.items():
     interval
     )  
 
-# Schedule screenshot cleanup every hour
+# Schedule screenshot cleanup every hour, see cleanup.py for config there.
 scheduler.add_job(
     func=cleanup_screenshots,
     trigger=IntervalTrigger(hours=1),
@@ -345,4 +354,5 @@ scheduler.add_job(
 )
 #define how flask runs and on what port.  0.0.0.0 is listening everywhere, can also specify specific IP to listen on.
 if __name__ == "__main__":
+    scheduler.start()
     app.run(host='0.0.0.0', port=5006)
