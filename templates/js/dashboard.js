@@ -105,3 +105,20 @@ function submitEdit(siteName) {
     });
 }
 
+//pause and resume
+function togglePause(siteName, pause) {
+  const endpoint = pause ? `/pause-site/${siteName}` : `/resume-site/${siteName}`;
+  fetch(endpoint, { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "paused" || data.status === "resumed") {
+        location.reload();
+      } else {
+        alert("Operation failed: " + (data.error || "unknown"));
+      }
+    })
+    .catch(err => {
+      console.error("Pause/resume error:", err);
+      alert("Network or server error occurred");
+    });
+}

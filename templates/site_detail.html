@@ -34,6 +34,13 @@
       <button type="submit">Update Site</button>
     </form>
   </div>
+  <div style="margin-top: 1em;">
+  {% if site.paused %}
+    <button onclick="togglePause('{{ site.site_name }}', false)">▶️ Resume Monitoring</button>
+  {% else %}
+    <button onclick="togglePause('{{ site.site_name }}', true)">⏸️ Pause Monitoring</button>
+  {% endif %}
+</div>
 </details>
 <h1>{{ site.site_name }}</h1>
 <p>{{ site.url }} — Every {{ site.interval_minutes }} min</p>

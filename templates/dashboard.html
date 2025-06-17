@@ -20,7 +20,9 @@
 <h1>Monitored Sites</h1>
 <div class="dashboard-grid">
   {% for job_id, site in sites.items() %}
-    <div class="site-card{% if site.change_detected %} alert{% endif %}">
+    <div class="site-card
+                {% if site.change_detected %} alert{% endif %}
+                {% if site.paused %} paused{% endif %}">
       <a href="/site/{{ site.site_name }}">
         <h3>{{ site.site_name }}</h3>
         <img loading="lazy" src="{{ site.images[0] if site.images else '/static/placeholder.png' }}" alt="{{ site.site_name }}" class="thumbnail">

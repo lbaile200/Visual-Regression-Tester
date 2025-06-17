@@ -253,6 +253,12 @@ summary.accordion-summary {
   overflow: hidden;
   transition: max-height 0.2s ease-out;
 }
+
+.site-card.paused {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;

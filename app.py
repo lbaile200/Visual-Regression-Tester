@@ -55,33 +55,30 @@ def get_recent_screenshots(site_name, count=6):
 
     return images, change_flag
 
+### Read /changes folder latest JSON for changes
 def load_changes(site_name):
-    path = f"screenshots/{site_name}/changes"
-    if not os.path.exists(path):
+    log_path = f"screenshots/{site_name}/changes/change_log.json"
+    if not os.path.exists(log_path):
         return []
 
-    changes = []
-    for json_file in sorted(os.listdir(path), reverse=True):
-        if json_file.endswith(".json"):
-            try:
-                with open(os.path.join(path, json_file), "r") as f:
-                    data = json.load(f)
-                    if isinstance(data, list):
-                        changes.extend(data)
-                    elif isinstance(data, dict):
-                        changes.append(data)
-            except Exception as e:
-                print(f"[!] Failed to load change file {json_file}: {e}")
+    try:
+        with open(log_path, "r") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                changes = data
+            else:
+                changes = [data]
+    except Exception as e:
+        print(f"[!] Failed to load change_log.json: {e}")
+        return []
 
-    #Remove any that reference missing images
+    # Validate image paths
     validated = []
     for change in changes:
         prev_path = change.get("prev", "").replace("/static/", "")
         curr_path = change.get("curr", "").replace("/static/", "")
         if os.path.exists(prev_path) and os.path.exists(curr_path):
             validated.append(change)
-        #else:
-            #print(f"[!] Skipping broken change: {change.get('timestamp')} (missing image)")
 
     validated.sort(key=lambda c: c.get("timestamp", ""), reverse=True)
     return validated
@@ -95,19 +92,21 @@ def dashboard():
     sites_with_images = {}
     for job_id, site in monitored_sites.items():
         site_name = site["site_name"]
-        images, _ = get_recent_screenshots(site_name)
 
-        changes = load_changes(site_name)
+        try:
+            images, _ = get_recent_screenshots(site_name)
+        except Exception as e:
+            print(f"[!] Failed to load screenshots for {site_name}: {e}")
+            images = []
 
-        #Debug print to confirm timestamp order
-        #print(f"[DEBUG] Change timestamps for site: {site_name}")
-        #for c in changes:
-        #    print("  -", c.get("timestamp"))
-
-        #changes = sorted(changes, key=lambda c: c.get("timestamp", ""), reverse=True)
+        try:
+            changes = load_changes(site_name)
+        except Exception as e:
+            print(f"[!] Failed to load changes for {site_name}: {e}")
+            changes = []
 
         last_dismissed = site.get("last_dismissed")
-        latest_ts = max(c["timestamp"] for c in changes if "timestamp" in c) if changes else None
+        latest_ts = max((c["timestamp"] for c in changes if "timestamp" in c), default=None)
         change_detected = latest_ts and latest_ts != last_dismissed
 
         sites_with_images[job_id] = {
@@ -189,6 +188,52 @@ def edit_site(site_name):
 
     return jsonify({"status": "Site updated"})
 
+### pause and resume.  I used chatGPT for this bc was in a hurry...
+from flask import abort
+
+@app.route("/pause-site/<site_name>", methods=["POST"])
+def pause_site(site_name):
+    job_id = f"site_{site_name}"
+    if job_id not in monitored_sites:
+        return jsonify({"error": "Site not found"}), 404
+
+    remove_job(job_id)
+    monitored_sites[job_id]["paused"] = True
+    save_sites(monitored_sites)
+    return jsonify({"status": "paused"})
+
+
+@app.route("/resume-site/<site_name>", methods=["POST"])
+def resume_site(site_name):
+    job_id = f"site_{site_name}"
+    if job_id not in monitored_sites:
+        return jsonify({"error": "Site not found"}), 404
+
+    site = monitored_sites[job_id]
+    if not site.get("paused"):
+        return jsonify({"error": "Site is not paused"}), 400
+
+    # Re-schedule the job
+    url = site["url"]
+    name = site["site_name"]
+    interval = site["interval_minutes"]
+    viewport = site.get("viewport", [1366, 768])
+    selector = site.get("cookie_accept_selector")
+    wait_time = site.get("wait_time", 2)
+
+    schedule_job(
+        job_id,
+        lambda url=url, name=name, viewport=viewport, selector=selector, wait=wait_time:
+            capture_job(url, name, viewport, selector, wait),
+        interval
+    )
+
+    site["paused"] = False
+    monitored_sites[job_id] = site
+    save_sites(monitored_sites)
+
+    return jsonify({"status": "resumed"})
+
 ### Literally all this for a favicon.  Flask is not perfect.
 @app.route('/favicon.ico')
 def favicon():
@@ -220,20 +265,24 @@ def add_site():
     cookie_selector = data.get('cookie_accept_selector', None)
     wait_time = data.get('wait_time', 2)  # default to 2 seconds
 
-    def job():
-        changed, before, after = capture_job(url, site_name, viewport)
+def job():
+    if monitored_sites.get(job_id, {}).get("paused"):
+        print(f"[⏸] Skipping {job_id} — site is paused.")
+        return
 
-        if changed:
-            ts = os.path.basename(after).replace(".png", "")
-            change_dir = f"screenshots/{site_name}/changes"
-            os.makedirs(change_dir, exist_ok=True)
-            metadata = {
-                "timestamp": ts,
-                "prev": before.replace("screenshots/", "/static/screenshots/"),
-                "curr": after.replace("screenshots/", "/static/screenshots/")
-            }
-            with open(f"{change_dir}/{ts}.json", "w") as f:
-                json.dump(metadata, f, indent=2)
+    changed, before, after = capture_job(url, site_name, viewport)
+
+    if changed:
+        ts = os.path.basename(after).replace(".png", "")
+        change_dir = f"screenshots/{site_name}/changes"
+        os.makedirs(change_dir, exist_ok=True)
+        metadata = {
+            "timestamp": ts,
+            "prev": before.replace("screenshots/", "/static/screenshots/"),
+            "curr": after.replace("screenshots/", "/static/screenshots/")
+        }
+        with open(f"{change_dir}/{ts}.json", "w") as f:
+            json.dump(metadata, f, indent=2)
 
     schedule_job(job_id, job, interval)
 
@@ -312,6 +361,11 @@ def status_page():
     statuses = []
 
     for site in monitored_sites.values():
+        site_name = site.get("site_name", "unknown")
+        if site.get("paused"):
+            statuses.append("[0]")
+            names.append(site_name)
+            continue
         site_name = site["site_name"]
         names.append(site_name)
 
@@ -330,19 +384,27 @@ def status_page():
 from apscheduler.triggers.interval import IntervalTrigger
 #define our variables for various sites we've added.
 for job_id, site in monitored_sites.items():
-    url = site['url']
-    name = site['site_name']
-    interval = site['interval_minutes']
-    viewport = site.get('viewport', [1366, 768])
+    url = site["url"]
+    name = site["site_name"]
+    interval = site["interval_minutes"]
+    viewport = site.get("viewport", [1366, 768])
     cookie_selector = site.get("cookie_accept_selector")
     wait_time = site.get("wait_time", 2)
-    #lambda to run capture_job (from visual_capture.py) with appropriate info.
+    is_paused = site.get("paused", False)
+
+    def make_job(url, name, viewport, selector, wait, paused, job_id):
+        def job():
+            if paused:
+                print(f"[⏸] Skipping {job_id} — site is paused.")
+                return
+            capture_job(url, name, viewport, selector, wait)
+        return job
+
     schedule_job(
-    job_id,
-    lambda url=url, name=name, viewport=viewport, selector=cookie_selector, wait=wait_time:
-        capture_job(url, name, viewport, selector, wait),
-    interval
-    )  
+        job_id,
+        make_job(url, name, viewport, cookie_selector, wait_time, is_paused, job_id),
+        interval
+    )
 
 # Schedule screenshot cleanup every hour, see cleanup.py for config there.
 scheduler.add_job(
