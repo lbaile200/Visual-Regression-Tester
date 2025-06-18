@@ -1,0 +1,266 @@
+body{
+    background-color: rgb(53, 53, 53);
+} 
+p{
+    color: #FFF;
+}
+h1,h2,h3,h4,a{
+    color: #FFF;
+}
+button{
+    color: #fff;
+    background-color: #000;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: .5em;
+}
+.thumb-wrapper {
+  position: relative;
+  text-align: center;
+}
+.timestamp {
+  font-size: 10px;
+  color: #666;
+}
+
+li{
+    color: #fff;
+}
+
+ .screenshot p{
+    color: #000;
+ }
+
+ .removeButton{
+    margin-left: 1em;
+    background-color: red;
+    cursor: crosshair;
+ }
+ 
+ .historyButton{
+    margin-top: 1em;
+    margin-left: 0em;
+ }
+
+ .baseOptions{
+    display: flex;
+    align-items: center;
+ }
+
+ 
+ .filmstrip {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    overflow: scroll;
+    width: 100%;
+ }
+  .thumbnail {
+    width: 175px;
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    
+  }
+  .thumbnail:hover {
+    transform: scale(1.1);
+  }
+
+  .lightbox {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .lightbox.show {
+    display: flex;
+  }
+
+  .lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 4px;
+  }
+
+.hidden {
+    display: none;
+}
+
+.alert {
+    background-color: #ffe0e0;
+    color: #a00;
+    padding: 6px 12px;
+    border: 1px solid #a00;
+    border-radius: 4px;
+    margin-top: 6px;
+    font-weight: bold;
+}
+.compare-img {
+    max-width: 300px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.change-pair {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+}
+.change-pair p{
+    color: #000;
+}
+
+.screenshot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.compare-img {
+    cursor: pointer;
+}
+.site-summary {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s ease;
+}
+
+.site-summary.has-alert {
+  border: 2px solid red;
+  background-color: #ffe5e5;
+  box-shadow: 0 0 10px red;
+}
+.site-summary.has-alert p{
+  color: #000;
+}
+.site-summary.has-alert a{
+  color: #000;
+}
+.site-summary.has-alert h3{
+  color: #000;
+}
+form{
+  color: #fff;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* Two equal-width columns */
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.site-card {
+  background-color: #1f1f1f;
+  border-radius: 8px;
+  padding: 0.75rem;
+  height: auto;
+  width: auto;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.site-card:hover {
+  transform: scale(1.02);
+}
+
+.site-card.alert {
+  border: 2px solid #ff4e4e;
+  box-shadow: 0 0 10px #ff4e4e;
+}
+
+.site-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.site-card .thumbnail {
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  object-position
+}
+#edit-site-form{
+  width: 50%;
+  display: inline-grid;
+}
+#edit-site-form button{
+  margin-top: 1em;
+}
+
+details.accordion {
+  margin-top: 1em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5em;
+  color: #fff;
+  width: fit-content;
+}
+
+/* Remove the native disclosure triangle */
+details.accordion summary::-webkit-details-marker {
+  display: none;
+}
+details.accordion summary::marker {
+  display: none;
+}
+
+summary.accordion-summary {
+  font-size: 1.25em;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* Optional styling for the gear icon */
+.gear-icon {
+  font-size: 1.25em;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+/* Rotate gear when accordion is open */
+details[open] .gear-icon {
+  transform: rotate(90deg);
+}
+
+summary.accordion-summary {
+  font-size: 1.25em;
+  font-weight: bold;
+  cursor: pointer;
+}
+.panel {
+  padding: 0 18px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
+
+.site-card.paused {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
