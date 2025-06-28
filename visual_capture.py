@@ -10,7 +10,9 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
     options = Options()
     options.add_argument('--headless')
     driver = webdriver.Firefox(options=options)
-    driver.set_window_size(viewport[0], viewport[1])
+    # Fix for issue where viewport sometimes comes in a little small. This sets the *outer* window size to ensure viewport matches exactly
+    from selenium.webdriver.common.window import WindowTypes
+    driver.set_window_rect(0, 0, viewport[0], viewport[1])
     import time
     driver.get(url)
     time.sleep(wait_time)
