@@ -18,42 +18,52 @@ def crop_image_to_exact_size(path, expected_width, expected_height):
     except Exception as e:
         print(f"[!] Failed to crop image {path}: {e}")
 ### fix issue where sometimes firefox process would not quit correctly.  Now uses try>finally logic.
+from PIL import Image
+import time
+
 def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait_time=2):
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+
     options = Options()
-    options.add_argument('--headless')
-    driver = None
-    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-    folder = f'screenshots/{site_name}'
-    os.makedirs(folder, exist_ok=True)
-    screenshot_path = f'{folder}/{ts}.png'
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size={},{}".format(viewport[0], viewport[1] + 120))  # pad for header
+
+    driver = webdriver.Chrome(options=options)
+    driver.set_window_rect(0, 0, viewport[0], viewport[1] + 120)  # extra for chrome border
 
     try:
-        driver = webdriver.Firefox(options=options)
-        # Ensure viewport dimensions match
-        driver.set_window_rect(0, 0, viewport[0], viewport[1])
-        import time
         driver.get(url)
         time.sleep(wait_time)
 
+        # Accept cookies if selector exists
         if cookie_selector:
             try:
-                from selenium.webdriver.common.by import By
-                from selenium.webdriver.support.ui import WebDriverWait
-                from selenium.webdriver.support import expected_conditions as EC
-                WebDriverWait(driver, wait_time).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, cookie_selector))
-                ).click()
-                print(f"[✓] Accepted cookies for {site_name}")
-            except Exception as e:
-                print(f"[!] Cookie accept not found or failed for {site_name}: {e}")
+                accept_btn = driver.find_element(By.CSS_SELECTOR, cookie_selector)
+                accept_btn.click()
+                time.sleep(1)  # allow banner to disappear
+            except Exception:
+                print("[!] Cookie accept selector not found or failed")
 
+        # Scroll to top and stabilize
+        driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(0.5)
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        out_dir = f"screenshots/{site_name}"
+        os.makedirs(out_dir, exist_ok=True)
+        screenshot_path = f"{out_dir}/{timestamp}.png"
         driver.save_screenshot(screenshot_path)
-        crop_image_to_exact_size(screenshot_path, viewport[0], viewport[1])
-        print(f"[✓] Screenshot saved: {screenshot_path}")
 
-    except Exception as e:
-        print(f"[!] Exception during capture: {e}")
-        return False, None, None
+        # Crop to exact viewport size (failsafe)
+        img = Image.open(screenshot_path)
+        cropped = img.crop((0, 0, viewport[0], viewport[1]))
+        cropped.save(screenshot_path)
+
+        print(f"[✓] Saved screenshot: {screenshot_path}")
+        return False, None, screenshot_path  # or handle MSE/diff logic here
 
     finally:
         if driver:
