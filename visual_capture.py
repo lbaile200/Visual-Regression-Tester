@@ -6,34 +6,62 @@ import os, json, shutil
 import cv2
 import numpy as np
 
+def crop_image_to_exact_size(path, expected_width, expected_height):
+    """Crop the bottom of the image if it's taller than expected."""
+    try:
+        with Image.open(path) as img:
+            width, height = img.size
+            if height > expected_height or width > expected_width:
+                cropped = img.crop((0, 0, expected_width, expected_height))
+                cropped.save(path)
+                print(f"[✓] Cropped screenshot to {expected_width}x{expected_height}")
+    except Exception as e:
+        print(f"[!] Failed to crop image {path}: {e}")
+### fix issue where sometimes firefox process would not quit correctly.  Now uses try>finally logic.
 def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait_time=2):
     options = Options()
     options.add_argument('--headless')
-    driver = webdriver.Firefox(options=options)
-    # Fix for issue where viewport sometimes comes in a little small. This sets the *outer* window size to ensure viewport matches exactly
-    from selenium.webdriver.common.window import WindowTypes
-    driver.set_window_rect(0, 0, viewport[0], viewport[1])
-    import time
-    driver.get(url)
-    time.sleep(wait_time)
-    if cookie_selector:
-        try:
-            # Wait for element and click it
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.support.ui import WebDriverWait
-            from selenium.webdriver.support import expected_conditions as EC
-
-            WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.CSS_SELECTOR, cookie_selector))).click()
-            print(f"[✓] Accepted cookies for {site_name}")
-        except Exception as e:
-            print(f"[!] Cookie accept not found or failed for {site_name}: {e}")
-
+    driver = None
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
     folder = f'screenshots/{site_name}'
     os.makedirs(folder, exist_ok=True)
     screenshot_path = f'{folder}/{ts}.png'
-    driver.save_screenshot(screenshot_path)
-    driver.quit()
+
+    try:
+        driver = webdriver.Firefox(options=options)
+        # Ensure viewport dimensions match
+        driver.set_window_rect(0, 0, viewport[0], viewport[1])
+        import time
+        driver.get(url)
+        time.sleep(wait_time)
+
+        if cookie_selector:
+            try:
+                from selenium.webdriver.common.by import By
+                from selenium.webdriver.support.ui import WebDriverWait
+                from selenium.webdriver.support import expected_conditions as EC
+                WebDriverWait(driver, wait_time).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, cookie_selector))
+                ).click()
+                print(f"[✓] Accepted cookies for {site_name}")
+            except Exception as e:
+                print(f"[!] Cookie accept not found or failed for {site_name}: {e}")
+
+        driver.save_screenshot(screenshot_path)
+        crop_image_to_exact_size(screenshot_path, viewport[0], viewport[1])
+        print(f"[✓] Screenshot saved: {screenshot_path}")
+
+    except Exception as e:
+        print(f"[!] Exception during capture: {e}")
+        return False, None, None
+
+    finally:
+        if driver:
+            try:
+                driver.quit()
+                print("[✓] WebDriver quit successfully.")
+            except Exception as quit_err:
+                print(f"[!] Error quitting WebDriver: {quit_err}")
 
     existing_images = sorted([f for f in os.listdir(folder) if f.endswith('.png')])
     prev_img_path = os.path.join(folder, existing_images[-2]) if len(existing_images) >= 2 else None
