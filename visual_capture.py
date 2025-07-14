@@ -52,6 +52,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
         time.sleep(0.5)
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
+        ts = timestamp
         out_dir = f"screenshots/{site_name}"
         os.makedirs(out_dir, exist_ok=True)
         screenshot_path = f"{out_dir}/{timestamp}.png"
