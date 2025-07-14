@@ -124,7 +124,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
                 "timestamp": timestamp,
                 "prev": f"/static/screenshots/{site_name}/changes/{timestamp}_prev.png",
                 "curr": f"/static/screenshots/{site_name}/changes/{timestamp}_curr.png",
-                "diff": f"/static/screenshots/{site_name}/changes/{timestamps}_diff.png",
+                "diff": f"/static/screenshots/{site_name}/changes/{timestamp}_diff.png",
                 "is_significant_change": True,
                 "dismissed": False
             }
