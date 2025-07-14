@@ -52,7 +52,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
         time.sleep(0.5)
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        ts = timestamp
+        ts = timestamp # this exists bc at some point I used the var 'ts' instead of timestamp and now I still am not 100% sure where all it is registered.
         out_dir = f"screenshots/{site_name}"
         os.makedirs(out_dir, exist_ok=True)
         screenshot_path = f"{out_dir}/{timestamp}.png"
@@ -206,7 +206,7 @@ def cleanup_old_screenshots(site_name, keep_minutes=1440):
             print(f"[!] Skipping malformed timestamp: {item.get('timestamp')}")
             continue
 
-        age = now - timestamp
+        age = now - ts
         keep = item.get('is_significant_change', False) or age < timedelta(minutes=keep_minutes)
         if keep:
             updated.append(item)
