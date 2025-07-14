@@ -63,7 +63,6 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
         cropped.save(screenshot_path)
 
         print(f"[✓] Saved screenshot: {screenshot_path}")
-        return False, None, screenshot_path  # or handle MSE/diff logic here
 
     finally:
         if driver:
