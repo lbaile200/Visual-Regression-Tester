@@ -71,7 +71,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
                 print("[✓] WebDriver quit successfully.")
             except Exception as quit_err:
                 print(f"[!] Error quitting WebDriver: {quit_err}")
-
+    folder = out_dir # make sure this is defined like I have above so it knows where to save
     existing_images = sorted([f for f in os.listdir(folder) if f.endswith('.png')])
     prev_img_path = os.path.join(folder, existing_images[-2]) if len(existing_images) >= 2 else None
     if not prev_img_path:
