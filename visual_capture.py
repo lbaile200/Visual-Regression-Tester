@@ -96,7 +96,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
         print(f"[DEBUG] MSE for {site_name}: {error}")
         if error > 50:
             is_significant = True
-            print(f"[VISUAL CHANGE] Detected for {site_name} at {ts}")
+            print(f"[VISUAL CHANGE] Detected for {site_name} at {timestamp}")
             changes_dir = f"{folder}/changes"
             os.makedirs(changes_dir, exist_ok=True)
 
@@ -107,23 +107,23 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
             highlighted = img2.copy()
             highlighted[thresh > 0] = [0, 0, 255]  # Highlight changed pixels in red
 
-            diff_path = os.path.join(changes_dir, f"{ts}_diff.png")
+            diff_path = os.path.join(changes_dir, f"{timestamp}_diff.png")
             cv2.imwrite(diff_path, highlighted)
             print(f"[✓] Saved visual diff at: {diff_path}")
         if is_significant:
             changes_dir = f"{folder}/changes"
             os.makedirs(changes_dir, exist_ok=True)
 
-            prev_copy = os.path.join(changes_dir, f"{ts}_prev.png")
-            curr_copy = os.path.join(changes_dir, f"{ts}_curr.png")
+            prev_copy = os.path.join(changes_dir, f"{timestamp}_prev.png")
+            curr_copy = os.path.join(changes_dir, f"{timestamp}_curr.png")
             shutil.copyfile(prev_img_path, prev_copy)
             shutil.copyfile(screenshot_path, curr_copy)
 
             change_record = {
-                "timestamp": ts,
-                "prev": f"/static/screenshots/{site_name}/changes/{ts}_prev.png",
-                "curr": f"/static/screenshots/{site_name}/changes/{ts}_curr.png",
-                "diff": f"/static/screenshots/{site_name}/changes/{ts}_diff.png",
+                "timestamp": timestamp,
+                "prev": f"/static/screenshots/{site_name}/changes/{timestamp}_prev.png",
+                "curr": f"/static/screenshots/{site_name}/changes/{timestamp}_curr.png",
+                "diff": f"/static/screenshots/{site_name}/changes/{timestamps}_diff.png",
                 "is_significant_change": True,
                 "dismissed": False
             }
@@ -140,9 +140,9 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
             with open(change_log, "w") as f:
                 json.dump(changes, f, indent=2)
 
-            with open(os.path.join(changes_dir, f"{ts}.json"), "w") as f:
+            with open(os.path.join(changes_dir, f"{timestamp}.json"), "w") as f:
                 json.dump(change_record, f, indent=2)
-                print(f"[✓] Saved individual change JSON at: {changes_dir}/{ts}.json")
+                print(f"[✓] Saved individual change JSON at: {changes_dir}/{timestamp}.json")
 
             try:
                 from app import monitored_sites, save_sites
@@ -164,7 +164,7 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
             except json.JSONDecodeError:
                 print(f"[!] Invalid metadata file: {f.name}")
     metadata.append({
-        "timestamp": ts,
+        "timestamp": timestamp,
         "site": site_name,
         "path": screenshot_path,
         "is_significant_change": is_significant
@@ -205,7 +205,7 @@ def cleanup_old_screenshots(site_name, keep_minutes=1440):
             print(f"[!] Skipping malformed timestamp: {item.get('timestamp')}")
             continue
 
-        age = now - ts
+        age = now - timestamp
         keep = item.get('is_significant_change', False) or age < timedelta(minutes=keep_minutes)
         if keep:
             updated.append(item)
