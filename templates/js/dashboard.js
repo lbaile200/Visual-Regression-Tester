@@ -122,3 +122,21 @@ function togglePause(siteName, pause) {
       alert("Network or server error occurred");
     });
 }
+
+function dismissAllAlerts() {
+  fetch("/dismiss-all", {
+    method: "POST"
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "all dismissed") {
+      location.reload();
+    } else {
+      alert("Dismiss all failed");
+    }
+  })
+  .catch(err => {
+    console.error("Error dismissing all alerts:", err);
+    alert("Server/network error");
+  });
+}

@@ -377,6 +377,21 @@ def status_page():
 
     response = f"{' | '.join(names)}\n{''.join(statuses)}"
     return response, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+###20250831_Lucas
+# dismiss all
+@app.route("/dismiss-all", methods=["POST"])
+def dismiss_all_alerts():
+    for job_id, site in monitored_sites.items():
+        site_name = site["site_name"]
+        changes = load_changes(site_name)
+        latest_ts = max((c.get("timestamp") for c in changes if "timestamp" in c), default=None)
+
+        if latest_ts:
+            site["last_dismissed"] = latest_ts
+            monitored_sites[job_id] = site
+
+    save_sites(monitored_sites)
+    return jsonify({"status": "all dismissed"})
 
 # --------------------
 # Scheduler Bootstrap

@@ -18,6 +18,7 @@
 <input id="viewport_height" placeholder="viewport height (600 default)">
 <input id="wait_time" type="number" placeholder="Wait time (sec, default 2)">
 <button onclick="addSite()">Add</button>
+<button onclick="dismissAllAlerts()">Dismiss All Alerts</button>
 <h1>Monitored Sites</h1>
 <div class="dashboard-grid">
   {% for job_id, site in sites.items() %}
