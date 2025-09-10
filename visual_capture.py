@@ -27,7 +27,11 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
     from selenium.webdriver.common.by import By
 
     options = Options()
-    options.add_argument("--headless=new")
+    ###20250907 - comment out the below line if you have frequent issues with font rendering being slightly different.  
+    ###headless can apparently do this sometimes. Technically more resource intensive, but 
+    ###not by much. If you are extremely performance constrained, set a higher threshold for 
+    ###MSE error rate on line 102 below
+    #options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size={},{}".format(viewport[0], viewport[1] + 120))  # pad for header
 
@@ -37,7 +41,8 @@ def capture_job(url, site_name, viewport=(1366, 768), cookie_selector=None, wait
     try:
         driver.get(url)
         time.sleep(wait_time)
-
+        ###20250910 assign a system font to override site-supplied fonts, as they may change slightly. 
+        driver.execute_script("""const style = document.createElement('style');style.innerHTML = '* { font-family: Arial, sans-serif !important; }';document.head.appendChild(style);""")
         # Accept cookies if selector exists
         if cookie_selector:
             try:
